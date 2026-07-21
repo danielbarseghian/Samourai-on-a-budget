@@ -1,4 +1,4 @@
-using Unity.VisualScripting;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,10 +6,13 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header ("Movement")]
     public InputActionAsset primaryInput;
+    public TextMeshProUGUI speedText;
     InputAction moveInputAction;
     InputAction jumpInputAction;
     public Transform orientation;
+    public int gravityMultiplier = 0;
     public int speed = 0;
+    public int speedLimit = 0;
     Vector2 direction;
     Vector3 moveDirection;
     public float groundDrag;
@@ -37,6 +40,7 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        rb.maxLinearVelocity = speedLimit;
     }
 
     void Update()
@@ -45,6 +49,8 @@ public class PlayerMovement : MonoBehaviour
             rb.linearDamping = groundDrag;
         else
             rb.linearDamping = 0;
+
+        speedText.SetText($"{rb.linearVelocity.magnitude}");
     }
     void OnTriggerEnter(Collider other)
     {
@@ -67,12 +73,16 @@ public class PlayerMovement : MonoBehaviour
         MovePlayer();
 
         if (!grounded && rb.linearVelocity.y < 0)
-            rb.AddForce(Vector3.down * 20f, ForceMode.Acceleration);
+            rb.AddForce(Vector3.down * 20f * gravityMultiplier, ForceMode.Acceleration);
     }
 
     private void MovePlayer()
     {
-        moveDirection = orientation.forward * direction.y + orientation.right * direction.x;
+        Vector3 flatForward = orientation.forward;
+        flatForward.y = 0f;
+        flatForward.Normalize();
+
+        moveDirection = flatForward * direction.y + orientation.right * direction.x;
 
         rb.AddForce(moveDirection.normalized * speed, ForceMode.Force);
     }
