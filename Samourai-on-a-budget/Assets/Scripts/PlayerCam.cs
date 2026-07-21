@@ -25,7 +25,6 @@ public class PlayerCam : MonoBehaviour
 
     public void OnLook(InputAction.CallbackContext ctx)
     {
-        Debug.Log("LOOK");
         lookInput = ctx.ReadValue<Vector2>();
     }
 
@@ -39,15 +38,13 @@ public class PlayerCam : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log($"movinputx : {lookInput.x}");
-        Debug.Log($"Move input y: {lookInput.y}");
-
         yRotation += lookInput.x * sensX;
         xRotation -= lookInput.y * sensY;
 
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
         transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
+        orientation.rotation = Quaternion.Euler(xRotation, yRotation, 0);
     }
 
 
