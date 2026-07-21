@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,7 +17,7 @@ public class PlayerMovement : MonoBehaviour
     [Header ("Drag")]
     public float playerHeight;
     public LayerMask whatIsGround;
-    public int jumpHeight;
+    public int jumpForce;
     bool grounded;
 
     Rigidbody rb;
@@ -40,29 +41,32 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        if (isGrounded())
+        if (grounded)
             rb.linearDamping = groundDrag;
         else
             rb.linearDamping = 0;
     }
-
-    bool isGrounded()
+    void OnTriggerEnter(Collider other)
     {
-        Vector3 origin = transform.position + Vector3.up * 0.1f;
+        if (other.CompareTag("Ground"))
+        {
+            grounded = true;
+        }
+    }
 
-        grounded = Physics.Raycast(origin, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
-
-        if (grounded) 
-            return true;
-        
-        return false;
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Ground"))
+        {
+            grounded = false;
+        }
     }
 
     void FixedUpdate()
     {
         MovePlayer();
 
-        if (!isGrounded() && rb.linearVelocity.y < 0)
+        if (!grounded && rb.linearVelocity.y < 0)
             rb.AddForce(Vector3.down * 20f, ForceMode.Acceleration);
     }
 
@@ -75,21 +79,23 @@ public class PlayerMovement : MonoBehaviour
 
     void JumpAction(InputAction.CallbackContext ctx)
     {
-        if (isGrounded())
+        if (grounded)
         {
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
-            rb.AddForce(transform.up * jumpHeight, ForceMode.Impulse);
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
 
     void OnEnable()
     {
         moveInputAction.Enable();
+        jumpInputAction.Enable();
     }
 
     void OnDisable()
     {
         moveInputAction.Disable();
+        jumpInputAction.Disable();
     }
 }
