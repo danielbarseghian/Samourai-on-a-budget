@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,20 +13,30 @@ public class PlayerMovement : MonoBehaviour
     InputAction sprintInputAction;
     public Transform orientation;
     public int gravityMultiplier = 0;
-    public float speed = 0;
+    private float moveSpeed = 0;
+    public float walkSpeed = 12;
+    public float sprintSpeed = 15;
+    public float airSpeed = 17;
     public int speedLimit = 0;
     Vector2 direction;
     Vector3 moveDirection;
     public float groundDrag;
     public int jumpForce;
-    public float sprintMultiplier = 1.2f;
+    private PlayerState state;
+    private bool isSprinting;
 
     [Header ("Drag")]
     public float playerHeight;
     public LayerMask whatIsGround;
     bool grounded;
-
     Rigidbody rb;
+
+    public enum PlayerState
+    {
+        walking,
+        sprinting,
+        air
+    }
 
     void Awake()
     {
@@ -51,6 +62,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        UpdateState();
+
         rb.maxLinearVelocity = speedLimit;
 
         if (grounded)
@@ -59,6 +72,15 @@ public class PlayerMovement : MonoBehaviour
             rb.linearDamping = 0;
 
         speedText.SetText($"{rb.linearVelocity.magnitude}");
+
+        Debug.Log($"{moveSpeed}");
+
+        if (grounded && !isSprinting)
+        {
+            state = PlayerState.walking;
+        }
+        if (!grounded)
+            state = PlayerState.air;
     }
 
     void FixedUpdate()
@@ -74,7 +96,20 @@ public class PlayerMovement : MonoBehaviour
 
         moveDirection = flatForward * direction.y + orientation.right * direction.x;
 
-        rb.AddForce(moveDirection.normalized * speed, ForceMode.Force);
+        rb.AddForce(moveDirection.normalized * moveSpeed, ForceMode.Force);
+    }
+
+    private void UpdateState()
+    {
+        if (state == PlayerState.walking)
+            moveSpeed = walkSpeed;
+
+        else if (state == PlayerState.sprinting)
+            moveSpeed = sprintSpeed;
+
+        else // He is in the air
+            moveSpeed = airSpeed;
+
     }
 
     private void JumpAction(InputAction.CallbackContext ctx)
@@ -87,12 +122,20 @@ public class PlayerMovement : MonoBehaviour
 
     private void SprintAction(InputAction.CallbackContext ctx)
     {
-        speed *= sprintMultiplier;
+        if (grounded)
+        {
+            isSprinting = true;
+            state = PlayerState.sprinting;
+        }
     }
 
     private void UnSprintAction(InputAction.CallbackContext ctx)
     {
-        speed /= sprintMultiplier;
+        if (grounded)
+        {
+            isSprinting = false;
+            state = PlayerState.walking;
+        }
     }
 
     void OnCollisionEnter(Collision collision)

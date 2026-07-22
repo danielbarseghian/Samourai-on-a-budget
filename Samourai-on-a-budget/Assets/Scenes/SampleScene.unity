@@ -891,7 +891,7 @@ Rigidbody:
   m_GameObject: {fileID: 899235632}
   serializedVersion: 5
   m_Mass: 1
-  m_LinearDamping: 10
+  m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -921,18 +921,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31e495831a8f53a5e9640b4706fe7589, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  primaryInput: {fileID: 0}
-  speedText: {fileID: 0}
+  primaryInput: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  speedText: {fileID: 812386509}
   orientation: {fileID: 1080919620}
-  gravityMultiplier: 0
-  speed: 0
-  speedLimit: 0
+  gravityMultiplier: 2
+  walkSpeed: 60
+  sprintSpeed: 100
+  airSpeed: 20
+  speedLimit: 25
   groundDrag: 5
+  jumpForce: 30
   playerHeight: 2
   whatIsGround:
     serializedVersion: 2
     m_Bits: 8
-  jumpForce: 0
 --- !u!65 &899235636
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -948,9 +950,9 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 1, y: 2.0080597, z: 1}
   m_Center: {x: 0, y: 1.0020968, z: 0}
