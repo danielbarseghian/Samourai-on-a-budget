@@ -23,7 +23,6 @@ public class PlayerMovement : MonoBehaviour
     public float groundDrag;
     public int jumpForce;
     private PlayerState state;
-    private bool isSprinting;
 
     [Header ("Drag")]
     public float playerHeight;
@@ -31,10 +30,17 @@ public class PlayerMovement : MonoBehaviour
     bool grounded;
     Rigidbody rb;
 
+    [Header ("Crouch")]
+    InputAction crouchInputAction;
+    public float crouchSpeed = 2.5f;
+    private float crouchSize;
+    private float baseSize;
+
     public enum PlayerState
     {
         walking,
         sprinting,
+        crouching,
         air
     }
 
@@ -43,6 +49,7 @@ public class PlayerMovement : MonoBehaviour
         moveInputAction = primaryInput.FindAction("Move");
         jumpInputAction = primaryInput.FindAction("Jump");
         sprintInputAction = primaryInput.FindAction("Sprint");
+        crouchInputAction = primaryInput.FindAction("Crouch");
 
         moveInputAction.performed += ctx => direction = ctx.ReadValue<Vector2>();
         moveInputAction.canceled += ctx => direction = Vector2.zero;
@@ -51,6 +58,9 @@ public class PlayerMovement : MonoBehaviour
 
         sprintInputAction.performed += SprintAction;
         sprintInputAction.canceled += UnSprintAction;
+
+        crouchInputAction.performed += CrouchAction;
+        crouchInputAction.canceled += UnCrouchAction;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -58,11 +68,13 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         Physics.gravity *= gravityMultiplier;
+        baseSize = transform.localScale.y;
+        crouchSize = baseSize / 2;
     }
 
     void Update()
     {
-        UpdateState();
+        HandleState();
 
         rb.maxLinearVelocity = speedLimit;
 
@@ -75,7 +87,7 @@ public class PlayerMovement : MonoBehaviour
 
         Debug.Log($"{moveSpeed}");
 
-        if (grounded && !isSprinting)
+        if (grounded && state != PlayerState.sprinting && state != PlayerState.crouching)
         {
             state = PlayerState.walking;
         }
@@ -99,13 +111,16 @@ public class PlayerMovement : MonoBehaviour
         rb.AddForce(moveDirection.normalized * moveSpeed, ForceMode.Force);
     }
 
-    private void UpdateState()
+    private void HandleState()
     {
         if (state == PlayerState.walking)
             moveSpeed = walkSpeed;
 
         else if (state == PlayerState.sprinting)
             moveSpeed = sprintSpeed;
+
+        else if (state == PlayerState.crouching)
+            moveSpeed = crouchSpeed;
 
         else // He is in the air
             moveSpeed = airSpeed;
@@ -124,7 +139,6 @@ public class PlayerMovement : MonoBehaviour
     {
         if (grounded)
         {
-            isSprinting = true;
             state = PlayerState.sprinting;
         }
     }
@@ -133,9 +147,32 @@ public class PlayerMovement : MonoBehaviour
     {
         if (grounded)
         {
-            isSprinting = false;
             state = PlayerState.walking;
         }
+    }
+
+    private void CrouchAction(InputAction.CallbackContext ctx)
+    {
+        if (grounded)
+        {
+            // Change the scale
+            transform.localScale = new Vector3(transform.localScale.x, crouchSize, transform.localScale.z);
+
+            rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
+
+            state = PlayerState.crouching;
+        }
+    }
+
+    private void UnCrouchAction(InputAction.CallbackContext ctx)
+    {
+        if (grounded)
+        {
+            state = PlayerState.walking;
+
+            transform.localScale = new Vector3(transform.localScale.x, baseSize, transform.localScale.z);
+        }
+        
     }
 
     void OnCollisionEnter(Collision collision)
@@ -159,6 +196,7 @@ public class PlayerMovement : MonoBehaviour
         moveInputAction.Enable();
         jumpInputAction.Enable();
         sprintInputAction.Enable();
+        crouchInputAction.Enable();
     }
 
     void OnDisable()
@@ -166,5 +204,6 @@ public class PlayerMovement : MonoBehaviour
         moveInputAction.Disable();
         jumpInputAction.Disable();
         sprintInputAction.Disable();
+        crouchInputAction.Disable();
     }
 }
