@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,17 +25,20 @@ public class PlayerMovement : MonoBehaviour
     public int jumpForce;
     private PlayerState state;
 
-    [Header ("Drag")]
+    [Header("Drag")]
     public float playerHeight;
-    public LayerMask whatIsGround;
     bool grounded;
     Rigidbody rb;
 
-    [Header ("Crouch")]
+    [Header("Crouch")]
     InputAction crouchInputAction;
     public float crouchSpeed = 2.5f;
     private float crouchSize;
     private float baseSize;
+    
+    [Header("Slop Handeling")]
+    public float maxSlopAngle = 40;
+    private RaycastHit slopehit;
 
     public enum PlayerState
     {
@@ -85,8 +89,6 @@ public class PlayerMovement : MonoBehaviour
 
         speedText.SetText($"{rb.linearVelocity.magnitude}");
 
-        Debug.Log($"{moveSpeed}");
-
         if (grounded && state != PlayerState.sprinting && state != PlayerState.crouching)
         {
             state = PlayerState.walking;
@@ -105,6 +107,11 @@ public class PlayerMovement : MonoBehaviour
         Vector3 flatForward = orientation.forward;
         flatForward.y = 0f;
         flatForward.Normalize();
+
+        if (OnSlop())
+        {
+            rb.AddForce(GetMoveDirection() * moveSpeed, ForceMode.Force);
+        }
 
         moveDirection = flatForward * direction.y + orientation.right * direction.x;
 
@@ -175,10 +182,27 @@ public class PlayerMovement : MonoBehaviour
         
     }
 
+    private bool OnSlop()
+    {
+        if (Physics.Raycast(transform.position, Vector3.down, out slopehit, playerHeight * .5f * .3f))
+        {
+            float angle = Vector3.Angle(Vector3.up, slopehit.normal);
+            return angle < maxSlopAngle && angle != 0;
+        }
+
+        return false;
+    }
+
+    private Vector3 GetMoveDirection()
+    {
+        return Vector3.ProjectOnPlane(moveDirection, slopehit.normal).normalized;
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
+            Debug.Log("ground");
             grounded = true;
         }
     }
