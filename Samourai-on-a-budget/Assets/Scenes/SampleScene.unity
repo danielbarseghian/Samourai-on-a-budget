@@ -890,7 +890,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 899235632}
   serializedVersion: 5
-  m_Mass: 80
+  m_Mass: 1
   m_LinearDamping: 10
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -921,18 +921,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31e495831a8f53a5e9640b4706fe7589, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  primaryInput: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  speedText: {fileID: 812386509}
+  primaryInput: {fileID: 0}
+  speedText: {fileID: 0}
   orientation: {fileID: 1080919620}
-  gravityMultiplier: 3
-  speed: 10000
-  speedLimit: 50
+  gravityMultiplier: 0
+  speed: 0
+  speedLimit: 0
   groundDrag: 5
   playerHeight: 2
   whatIsGround:
     serializedVersion: 2
     m_Bits: 8
-  jumpForce: 1500
+  jumpForce: 0
 --- !u!65 &899235636
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1302,7 +1302,7 @@ GameObject:
   - component: {fileID: 1665606429}
   - component: {fileID: 1665606428}
   - component: {fileID: 1665606427}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Base
   m_TagString: Ground
   m_Icon: {fileID: 0}

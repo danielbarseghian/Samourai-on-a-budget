@@ -9,18 +9,20 @@ public class PlayerMovement : MonoBehaviour
     public TextMeshProUGUI speedText;
     InputAction moveInputAction;
     InputAction jumpInputAction;
+    InputAction sprintInputAction;
     public Transform orientation;
     public int gravityMultiplier = 0;
-    public int speed = 0;
+    public float speed = 0;
     public int speedLimit = 0;
     Vector2 direction;
     Vector3 moveDirection;
     public float groundDrag;
+    public int jumpForce;
+    public float sprintMultiplier = 1.2f;
 
     [Header ("Drag")]
     public float playerHeight;
     public LayerMask whatIsGround;
-    public int jumpForce;
     bool grounded;
 
     Rigidbody rb;
@@ -29,22 +31,28 @@ public class PlayerMovement : MonoBehaviour
     {
         moveInputAction = primaryInput.FindAction("Move");
         jumpInputAction = primaryInput.FindAction("Jump");
+        sprintInputAction = primaryInput.FindAction("Sprint");
 
         moveInputAction.performed += ctx => direction = ctx.ReadValue<Vector2>();
         moveInputAction.canceled += ctx => direction = Vector2.zero;
 
         jumpInputAction.performed += JumpAction;
+
+        sprintInputAction.performed += SprintAction;
+        sprintInputAction.canceled += UnSprintAction;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.maxLinearVelocity = speedLimit;
+        Physics.gravity *= gravityMultiplier;
     }
 
     void Update()
     {
+        rb.maxLinearVelocity = speedLimit;
+
         if (grounded)
             rb.linearDamping = groundDrag;
         else
@@ -52,28 +60,10 @@ public class PlayerMovement : MonoBehaviour
 
         speedText.SetText($"{rb.linearVelocity.magnitude}");
     }
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Ground"))
-        {
-            grounded = true;
-        }
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Ground"))
-        {
-            grounded = false;
-        }
-    }
 
     void FixedUpdate()
     {
         MovePlayer();
-
-        if (!grounded && rb.linearVelocity.y < 0)
-            rb.AddForce(Vector3.down * 20f * gravityMultiplier, ForceMode.Acceleration);
     }
 
     private void MovePlayer()
@@ -87,13 +77,37 @@ public class PlayerMovement : MonoBehaviour
         rb.AddForce(moveDirection.normalized * speed, ForceMode.Force);
     }
 
-    void JumpAction(InputAction.CallbackContext ctx)
+    private void JumpAction(InputAction.CallbackContext ctx)
     {
         if (grounded)
         {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
+
+    private void SprintAction(InputAction.CallbackContext ctx)
+    {
+        speed *= sprintMultiplier;
+    }
+
+    private void UnSprintAction(InputAction.CallbackContext ctx)
+    {
+        speed /= sprintMultiplier;
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            grounded = true;
+        }
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            grounded = false;
         }
     }
 
@@ -101,11 +115,13 @@ public class PlayerMovement : MonoBehaviour
     {
         moveInputAction.Enable();
         jumpInputAction.Enable();
+        sprintInputAction.Enable();
     }
 
     void OnDisable()
     {
         moveInputAction.Disable();
         jumpInputAction.Disable();
+        sprintInputAction.Disable();
     }
 }
