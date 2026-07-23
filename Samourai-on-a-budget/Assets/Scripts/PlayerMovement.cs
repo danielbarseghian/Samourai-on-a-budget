@@ -22,12 +22,14 @@ public class PlayerMovement : MonoBehaviour
     Vector2 direction;
     Vector3 moveDirection;
     public float groundDrag;
+    public LayerMask groundMask;
+    public float groundCheckDistance = .5f;
     public int jumpForce;
     private PlayerState state;
+    private bool canSprint;
 
     [Header("Drag")]
     public float playerHeight;
-    bool grounded;
     Rigidbody rb;
 
     [Header("Crouch")]
@@ -82,6 +84,8 @@ public class PlayerMovement : MonoBehaviour
 
         rb.maxLinearVelocity = speedLimit;
 
+        bool grounded = IsGrounded();
+
         if (grounded)
             rb.linearDamping = groundDrag;
         else
@@ -95,6 +99,9 @@ public class PlayerMovement : MonoBehaviour
         }
         if (!grounded)
             state = PlayerState.air;
+
+        // turn off gravity if we are on a slop
+        rb.useGravity = !OnSlop();
     }
 
     void FixedUpdate()
@@ -111,6 +118,9 @@ public class PlayerMovement : MonoBehaviour
         if (OnSlop())
         {
             rb.AddForce(GetMoveDirection() * moveSpeed, ForceMode.Force);
+
+            // Add force down so we don't get weird movment
+            rb.AddForce(Vector3.down * 80f, ForceMode.Impulse);
         }
 
         moveDirection = flatForward * direction.y + orientation.right * direction.x;
@@ -136,7 +146,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void JumpAction(InputAction.CallbackContext ctx)
     {
-        if (grounded)
+        if (IsGrounded())
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
@@ -144,7 +154,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void SprintAction(InputAction.CallbackContext ctx)
     {
-        if (grounded)
+        if (IsGrounded())
         {
             state = PlayerState.sprinting;
         }
@@ -152,7 +162,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void UnSprintAction(InputAction.CallbackContext ctx)
     {
-        if (grounded)
+        if (IsGrounded())
         {
             state = PlayerState.walking;
         }
@@ -160,7 +170,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void CrouchAction(InputAction.CallbackContext ctx)
     {
-        if (grounded)
+        if (IsGrounded())
         {
             // Change the scale
             transform.localScale = new Vector3(transform.localScale.x, crouchSize, transform.localScale.z);
@@ -173,7 +183,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void UnCrouchAction(InputAction.CallbackContext ctx)
     {
-        if (grounded)
+        if (IsGrounded())
         {
             state = PlayerState.walking;
 
@@ -198,21 +208,16 @@ public class PlayerMovement : MonoBehaviour
         return Vector3.ProjectOnPlane(moveDirection, slopehit.normal).normalized;
     }
 
-    void OnCollisionEnter(Collision collision)
+    bool IsGrounded()
     {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            Debug.Log("ground");
-            grounded = true;
-        }
-    }
+        Debug.DrawRay(transform.position, Vector3.down * groundCheckDistance, Color.red);
 
-    void OnCollisionExit(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            grounded = false;
-        }
+        return Physics.Raycast(
+            transform.position,
+            Vector3.down,
+            groundCheckDistance + playerHeight / 2,
+            groundMask
+        );
     }
 
     void OnEnable()
