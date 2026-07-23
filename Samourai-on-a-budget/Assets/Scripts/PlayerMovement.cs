@@ -42,11 +42,20 @@ public class PlayerMovement : MonoBehaviour
     public float maxSlopAngle = 40;
     private RaycastHit slopehit;
 
+    [Header("Sliding")]
+    public float maxSlideTime;
+    public float slideForce = 5f;
+    public float slideCooldown = 1000;
+    private bool canSlide = false;
+    private float slideTimer;
+    private bool isSliding;
+
     public enum PlayerState
     {
         walking,
         sprinting,
         crouching,
+        sliding,
         air
     }
 
@@ -94,11 +103,13 @@ public class PlayerMovement : MonoBehaviour
         speedText.SetText($"{rb.linearVelocity.magnitude}");
 
         if (grounded && state != PlayerState.sprinting && state != PlayerState.crouching)
-        {
             state = PlayerState.walking;
-        }
-        if (!grounded)
+
+        else if (!grounded)
             state = PlayerState.air;
+
+        else if (grounded && isSliding)
+            state = PlayerState.sliding;
 
         // turn off gravity if we are on a slop
         rb.useGravity = !OnSlop();
@@ -107,6 +118,12 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         MovePlayer();
+
+        if (isSliding)
+        {
+            Debug.Log("Sliding");
+            SlidingMovement();
+        }
     }
 
     private void MovePlayer()
@@ -177,8 +194,46 @@ public class PlayerMovement : MonoBehaviour
 
             rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
 
-            state = PlayerState.crouching;
+            // Slide
+            if (rb.linearVelocity.magnitude > 5)
+            {
+                Debug.Log("Slide");
+                StartSlide();
+            }
+
+            // Crouch
+            else 
+                state = PlayerState.crouching;
         }
+    }
+
+    private void StartSlide()
+    {
+        isSliding = true;
+
+        slideTimer = maxSlideTime;
+    }
+
+    private void SlidingMovement()
+    {
+        Vector3 inputDirection = orientation.forward * direction.y + orientation.right * direction.x;
+
+        Debug.Log("Vroooom");
+        rb.AddForce(inputDirection * slideForce, ForceMode.Force);
+
+        // update timer
+        slideTimer -= Time.deltaTime;
+
+        if (slideTimer <= 0)
+            StopSliding();
+    }
+
+    private void StopSliding()
+    {
+        Debug.Log("stop");
+        isSliding = false;
+
+        transform.localScale = new Vector3(transform.localScale.x, baseSize, transform.localScale.z);
     }
 
     private void UnCrouchAction(InputAction.CallbackContext ctx)
@@ -190,6 +245,8 @@ public class PlayerMovement : MonoBehaviour
             transform.localScale = new Vector3(transform.localScale.x, baseSize, transform.localScale.z);
         }
         
+        if (isSliding)
+            StopSliding();
     }
 
     private bool OnSlop()

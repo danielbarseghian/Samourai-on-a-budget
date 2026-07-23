@@ -937,6 +937,8 @@ MonoBehaviour:
   playerHeight: 2
   crouchSpeed: 40
   maxSlopAngle: 40
+  maxSlideTime: 100
+  slideForce: 5
 --- !u!1 &981840756
 GameObject:
   m_ObjectHideFlags: 0
